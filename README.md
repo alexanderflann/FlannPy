@@ -1,0 +1,702 @@
+# FlannPy
+
+A Python Library for Mathematical Finance (Option Pricing and Sensitivities, Volatility Modelling, and Stochastic Processes).
+
+### Installation
+
+https://pypi.org/project/FlannPy/
+
+```
+pip install flannpy
+```
+
+# Version '0.1.0'
+
+FlannPy is an Option Pricing and Sensitivities library in Python which leverages the principals of object-oriented programming.
+
+To see the underlying mathematics, please see the LaTeX pdf _A Python Library for Mathematical Finance_. Each options are modelling via Black-Scholes or an extension to the Black-Scholes model, _e.g._, single barrier options are formualted via the Reiner-Rubinstein model. To note, binary and barrier binary options are towards the end of the list, otherwise it is alphabetically sorted.
+
+The current list of options include:
+    
+    (Single) Barrier Options
+    (Double) Barrier Options
+    Compound Options
+    European Vanilla Options (Black-Scholes)
+    European Vanilla Options (Heston)
+    Exchange Options
+    Forward-Start Options
+    FX Options
+    Options on Futures
+    Binary Options
+    Barrier Binary Options
+
+There are more option pricing models being constructed. Currently, volatility models and stochastic processes are in the process of being drafted to include in the Python library.
+
+# Option Pricing and Sensitivities
+
+Here are some example uses. Note that if 'option_type' is applicable, then it is a Boolean, where True represents a Call, and False represents a Put.
+
+## (Single) Barrier Options
+
+A (single) barrier option is an option which has an additional constraint such that it becomes active, or inactive, if the underlying asset, $S$, passes through a barrier, $X$. Only active options can be exercised. For an in-barrier, the option cannot be exercised unless the underlying passes through the barrier from either above or below. For an out-barrier, the option becomes inactive, hence worthless, if it passes through the barrier either from above or below.
+
+Single barrier options are evaulated via the Reiner-Rubenstein model.
+
+```Python
+from flannpy import ReinerRubinsteinBarrier
+
+# Initial underlying asset price    :   S = 100
+# Strike price                      :   E = 100
+# Barrier price                     :   X = 110
+# Time to maturity in years         :   T = 1
+# Risk-free interest rate           :   r = 0.05
+# Dividend yield                    :   q = 0.02
+# Underlying asset volatility       :   sigma = 0.2
+# Barrier direction                 :   Up / Down = True / False
+# Barrier type                      :   Out / In = True / False
+# Option type                       :   Call / Put = True / False
+
+# Rebate                            :   J = 0
+
+option = ReinerRubinsteinBarrier(100, 100, 110, 1, 0.05, 0.02, 0.2, True, False, True)
+
+print(option)
+```
+
+The resulting ouptut, for an up-and-in call option, is:
+
+```
+Price :   9.1101
+Delta :   0.5967
+Gamma :   0.0196
+Rho   :  49.4625
+Theta :  -5.2542
+Vega  :  39.5248
+```
+
+To include a rebate, then add the rebate value, $J$, at the end of the class instance variables.
+
+## (Double) Barrier Options
+
+Double barrier options are either knocked in or knocked out if the underlying crosses the lower barrier, $X_d$, or the upper barrier, $X_u$, before the option expires.
+
+Double barrier options are evaluated via the Kunitomo-Ikeda model.
+
+```Python
+from flannpy import KunitomoIkedaBarrier
+
+# Initial underlying asset price    :   S = 100
+# Strike price                      :   E = 100
+# Upper barrier price               :   X_u = 120
+# Lower barrier price               :   X_d = 80
+# Time to maturity in years         :   T = 1
+# Risk-free interest rate           :   r = 0.05
+# Dividend yield                    :   q = 0.02
+# Underlying asset volatility       :   sigma = 0.2
+# Barrier type                      :   Out / In = True / False
+# Option type                       :   Call / Put = True / False
+
+# Upper barrier curvature           :   delta_1 = 0
+# Lower barrier curvature           :   delta_2 = 0
+
+option = KunitomoIkedaBarrier(100, 100, 120, 80, 1, 0.05, 0.02, 0.2, True, True)
+
+print(option)
+```
+
+The resulting ouptut, for a knock-out double barrier call option, is:
+
+```
+Price :   1.0731
+Delta :  -0.0093
+Gamma :  -0.0065
+Rho   :   1.2243
+Theta :   1.3914
+Vega  : -14.0670
+```
+
+To adjust for upper and lower barrier curvature respectively, then add $\delta_1, \delta_2$, at the end of the class instance variables.
+
+## Compound Options
+
+A compound option is an option on an option, _i.e._, the underlying asset is an option.
+
+Compound options are evaulated via the Geske model.
+
+```Python
+from flannpy import GeskeCompound
+
+# Initial underlying asset price        :   S = 100
+# Compound option strike price          :   E_1 = 10
+# Underlying option strike price        :   E_2 = 100
+# Compound option time to maturity      :   T_1 = 1
+# Underlying option time to maturity    :   T_2 = 2
+# Risk-free interest rate               :   r = 0.05
+# Dividend yield                        :   q = 0.02
+# Underlying asset volatility           :   sigma = 0.2
+# Compound type                         :   Call / Put = True / False
+# Option type                           :   Call / Put = True / False
+
+option = GeskeCompound(100, 10, 100, 1, 2, 0.05, 0.02, 0.2, True, True)
+
+print(option)
+```
+
+The resulting ouptut, for a call-on-a-call option, is:
+
+```
+Price :   6.8138
+Delta :   0.4641
+Gamma :   0.0176
+Rho   :  74.4909
+Theta :  -4.5808
+Vega  :  47.1030
+```
+
+## European Options (via Black-Scholes)
+
+A European vanilla call option is a contract where at the expiration date, the holder of the option may choose to purchase the underlying asset at the strike price. The term ’European’ means that the financial option can only be exercised at expiry.
+
+Here, European vanilla options are evaulated via the Black-SCholes model.
+
+```Python
+from flannpy import BlackScholesEuropean
+
+# Initial underlying asset price    :   S = 100
+# Strike price                      :   E = 100
+# Time to maturity                  :   T = 1
+# Risk-free interest rate           :   r = 0.05
+# Dividend yield                    :   q = 0.02
+# Underlying asset volatility       :   sigma = 0.2
+# Option type                       :   Call / Put = True / False
+
+option = BlackScholesEuropean(100, 100, 1, 0.05, 0.02, 0.2, True)
+
+print(option)
+```
+
+The resulting ouptut, for a call option, is:
+
+```
+Price :   9.2270
+Delta :   0.5869
+Gamma :   0.0190
+Rho   :  49.4581
+Theta :  -5.0893
+Vega  :  37.9012
+```
+
+## European Options (via Heston)
+
+Here, European vanilla options are evaulated via the Heston Stochastic Volatility model.
+
+```Python
+from flannpy import HestonEuropean
+
+# Initial underlying asset price    :   S = 100
+# Strike price                      :   E = 100
+# Time to maturity                  :   T = 1
+# Risk-free interest rate           :   r = 0.05
+# Dividend yield                    :   q = 0.02
+# Underlying asset volatility       :   sigma = 0.2
+# Option type                       :   Call / Put = True / False
+# Initial variance                  :   v_0 = 0.04
+# Mean reversion rate               :   kappa = 2
+# Long time variance                :   theta = 0.04
+# Volatility of variance            :   xi = 0.3
+# Correlation                       :   rho = -0.7
+# Variance risk premium             :   lambda = 0
+
+option = HestonEuropean(100, 100, 1, 0.05, 0.02, True, 0.04, 2, 0.04, 0.3, -0.7, 0)
+
+print(option)
+```
+
+The resulting ouptut, for a call option, is:
+
+```
+Price :   9.0534
+Delta :   0.6425
+Gamma :   0.0184
+Rho   :  55.2012
+Theta :  -5.0157
+Vanna :  -0.1053
+Vega  :  15.9417
+Volga :  47.7084
+```
+
+## Exchange Options
+
+An exchange option gives its owner the right, but not the obligation, to exchange one asset for another at a specified future date.
+
+Exchange options are evaluated via the Margrabe formula.
+
+```Python
+from flannpy import MargrabeExchange
+
+# Initial underlying asset price 1  :   S_1 = 100
+# Initial underlying asset price 2  :   S_2 = 100
+# Time to maturity                  :   T = 1
+# Dividend yield 1                  :   q_1 = 0.01
+# Dividend yield 1                  :   q_1 = 0.02
+# Underlying asset volatility 1     :   sigma = 0.2
+# Underlying asset volatility 2     :   sigma = 0.3
+
+option = MargrabeExchange(100, 100, 1, 0.01, 0.02, 0.2, 0.3, 0.5)
+
+print(option)
+```
+
+The resulting ouptut, for an exchange option, is:
+
+```
+Price             :   9.8826
+Correlation Vega  :  -8.8285
+Delta1            :   0.4282
+Delta2            :   0.5270
+Gamma1            :   0.0147
+Gamma2            :   0.0147
+Cross-Gamma       :   0.0146
+Theta             :  -4.5241
+Vega              :  38.9301
+```
+
+## Forward-Start Options
+
+A forward-start option is a standard European option that is agreed upon in the present but only becomes active at a pre-specified future date, $t$, which is known as the forward-start or grant date. The strike price, $E$, is set equal to the current underlying asset price, $S_t = S(t)$. The  older therefore has the right to receive an option in the future, rather than receiving the option immediately.
+
+Forward-start options are evaluated by the Rubinstein formula.
+
+```Python
+from flannpy import RubinsteinForwardStart
+
+# Initial underlying asset price    :   S = 100
+# Grant date                        :   T = 1
+# Expiration date                   :   T = 2
+# Risk-free interest rate           :   r = 0.05
+# Dividend yield                    :   q = 0.02
+# Underlying asset volatility       :   sigma = 0.2
+# Option type                       :   Call / Put = True / False
+
+option = RubinsteinForwardStart(100, 1, 2, 0.05, 0.02, 0.2, True)
+
+print(option)
+```
+
+The resulting ouptut, for a forward-start call option, is:
+
+```
+Price :   9.0443
+Delta :   0.0904
+Rho   :  48.4788
+Theta :   0.0090
+Vega  :  37.1507
+```
+
+## FX Options
+
+FX options are evaluated via the Garman-Kohlhagen model.
+
+```Python
+from flannpy import GarmanKohlhagenFX
+
+# Initial underlying asset price    :   S = 100
+# Strike price                      :   E = 100
+# Time to maturity                  :   T = 1
+# Domestic risk-free interest rate  :   r_d = 0.05
+# Foreign risk-free interest rate   :   r_f = 0.02
+# Dividend yield                    :   q = 0.02
+# Underlying asset volatility       :   sigma = 0.2
+# Option type                       :   Call / Put = True / False
+
+option = GarmanKohlhagenFX(100, 100, 1, 0.05, 0.02, 0.02, 0.2, True)
+
+print(option)
+```
+
+The resulting ouptut, for a call option, is:
+
+```
+Price        :   8.1026
+Delta        :   0.5377
+Gamma        :   0.0190
+Domestic Rho :  45.6648
+Foreign Rho  :  53.7675
+Theta        :  -3.9227
+Vega         :  37.9012
+```
+
+## Options on Futures
+
+This is a financial option where the underlying is a future.
+
+Options on futures are evaluated via the Black-76 model.
+
+```Python
+from flannpy import Black76Futures
+
+# Initial underlying future price   :   F = 100
+# Strike price                      :   E = 100
+# Time to maturity                  :   T = 1
+# Risk-free interest rate           :   r = 0.05
+# Underlying asset volatility       :   sigma = 0.2
+# Option type                       :   Call / Put = True / False
+
+option = Black76Futures(100, 100, 1, 0.05, 0.2, True)
+
+print(option)
+```
+
+The resulting ouptut, for a call option on futures, is:
+
+```
+Price :   7.5771
+Delta :   0.5135
+Gamma :   0.0189
+Rho   :  -7.5771
+Theta :  -3.3971
+Vega  :  37.7593
+```
+
+## Binary Options
+
+These are path-independent binary options that are extensions to the Black-Scholes-Merton model.
+
+    There are 4 types of binary options:
+
+        Cash-or-nothing
+        Asset-or-nothing
+        Gap
+        Supershare
+
+```Python
+from flannpy import BlackScholesBinary
+
+# Initial underlying asset price    :   S = 100
+# Time to maturity in years         :   T = 1
+# Risk-free interest rate           :   r = 0.05
+# Dividend yield                    :   q = 0.02
+# Underlying asset volatility       :   sigma = 0.2
+
+option = BlackScholesBinary(100, 1, 0.05, 0.02, 0.2)
+```
+
+### Cash-or-Nothing
+
+Cash-or-nothing options pay a predetermined fixed cash amount if the underlying asset matures above or below the strike price for a call or put, respectively; otherwise, it expires worthless.
+   
+```Python
+# Fixed cash amount     :   B = 20
+# Strike price          :   E = 100
+# Option type           :   Call / Put = True / False
+
+call = (20, 100, True)
+
+print(
+    f"Price : {option.cash_or_nothing_price(*call):>8.4f}\n"
+    f"Delta : {option.cash_or_nothing_delta(*call):>8.4f}\n"
+    f"Gamma : {option.cash_or_nothing_gamma(*call):>8.4f}\n"
+    f"Rho   : {option.cash_or_nothing_rho(*call):>8.4f}\n"
+    f"Theta : {option.cash_or_nothing_theta(*call):>8.4f}\n"
+    f"Vega  : {option.cash_or_nothing_vega(*call):>8.4f}"
+)
+```
+
+To see the resulting output for a put, change *call to *put, therefore, the ouptut, for a cash-or-nothing call option, is:
+
+```
+Price :   9.8916
+Delta :   0.3790
+Gamma :  -0.0047
+Rho   :  28.0095
+Theta :   0.3051
+Vega  :  -9.4753
+```
+
+## Asset-or-nothing
+
+An asset-or-nothing option pays one unit of the underlying asset if the option finishes in-the-money; otherwise, it expires worthless.
+
+```Python
+# Strike price      :   E = 100
+# Option type       :   Call / Put = True / False
+
+call = (100, True)
+
+print(
+    f"Price : {option.asset_or_nothing_price(*call):>8.4f}\n"
+    f"Delta : {option.asset_or_nothing_delta(*call):>8.4f}\n"
+    f"Gamma : {option.asset_or_nothing_gamma(*call):>8.4f}\n"
+    f"Rho   : {option.asset_or_nothing_rho(*call):>8.4f}\n"
+    f"Theta : {option.asset_or_nothing_theta(*call):>8.4f}\n"
+    f"Vega  : {option.asset_or_nothing_vega(*call):>8.4f}"
+)
+```
+
+The resulting ouptut, for an asset-or-nothing call option, is:
+
+```
+Price :  58.6851
+Delta :   2.4819
+Gamma :  -0.0244
+Rho   : 189.5058
+Theta :  -3.5639
+Vega  :  -9.4753
+```
+
+## Gap
+
+A gap option uses one strike price to determine whether the option is exercised and a second strike price to determine the size of the pay-off.
+
+```Python
+# Exercise strike price     :   E_1 = 105
+# Payoff strike price       :   E_2 = 100
+# Option type               :   Call / Put = True / False
+
+call = (105, 100, True)
+
+print(
+    f"Price : {option.gap_price(*call):>8.4f}\n"
+    f"Delta : {option.gap_delta(*call):>8.4f}\n"
+    f"Gamma : {option.gap_gamma(*call):>8.4f}\n"
+    f"Rho   : {option.gap_rho(*call):>8.4f}\n"
+    f"Theta : {option.gap_theta(*call):>8.4f}\n"
+    f"Vega  : {option.gap_vega(*call):>8.4f}"
+)
+```
+
+The resulting ouptut, for a gap call option, is:
+
+```
+Price :   8.9993
+Delta :   0.5856
+Gamma :  -0.0000
+Rho   :  49.5576
+Theta :  -5.2115
+Vega  :  39.0472
+```
+
+## Supershare
+
+A supershare option pays one unit of the underlying asset if the terminal asset price finishes within a specified range bounded by two strike prices; otherwise, it expires worthless.
+
+```Python
+# Lower strike price    :   E_1 = 95
+# Upper strike price    :   E_2 = 105
+
+supershare = (95, 105)
+
+print(
+    f"Price : {option.supershare_price(*supershare):>8.4f}\n"
+    f"Delta : {option.supershare_delta(*supershare):>8.4f}\n"
+    f"Gamma : {option.supershare_gamma(*supershare):>8.4f}\n"
+    f"Rho   : {option.supershare_rho(*supershare):>8.4f}\n"
+    f"Theta : {option.supershare_theta(*supershare):>8.4f}\n"
+    f"Vega  : {option.supershare_vega(*supershare):>8.4f}"
+)
+```
+
+The resulting ouptut, for a supershare option, is:
+
+```
+Price :   0.1974
+Delta :  -0.0005
+Gamma :  -0.0005
+Rho   :  -0.2477
+Theta :   0.1068
+Vega  :  -0.9540
+```
+
+### Barrier Binary Options
+
+Barrier binary options are a type of path-independent binary option. There are three major types of barrier binary options: payout at hit - barrier only, payout at maturity - barrier only, and payout at maturity - barrier and strike.
+
+Barrier binary options are evaluated via the Reiner-Rubinstein model.
+
+```Python
+from flannpy import ReinerRubinsteinBinaryBarrier
+
+# Initial underlying asset price    :   S = 100
+# Strike price                      :   E = 100
+# Barrier price                     :   X = 110
+# Time to maturity in years         :   T = 1
+# Risk-free interest rate           :   r = 0.05
+# Dividend yield                    :   q = 0.02
+# Underlying asset volatility       :   sigma = 0.2
+# Barrier direction                 :   Up / Down = True / False
+# Barrier type                      :   Out / In = True / False
+# Binary type                       :   Cash / Asset = True / False
+```
+
+## Payout at hit - barrier only
+
+These are for in barrier options only.
+
+### Cash-at-hit
+
+```Python
+option = ReinerRubinsteinBinaryBarrier(100, 100, 110, 1, 0.05, 0.02, 0.2, True, False, True)
+
+# Fixed cash amount                 :   B = 20
+
+print(
+    f"Price : {option.payout_at_hit_price(20):>8.4f}\n"
+    f"Delta : {option.payout_at_hit_delta(20):>8.4f}\n"
+    f"Gamma : {option.payout_at_hit_gamma(20):>8.4f}\n"
+    f"Rho   : {option.payout_at_hit_rho(20):>8.4f}\n"
+    f"Theta : {option.payout_at_hit_theta(20):>8.4f}\n"
+    f"Vega  : {option.payout_at_hit_vega(20):>8.4f}"
+)
+```
+
+The resulting ouptut, for an up-and-in, cash-at-hit barrier binary option, is:
+
+```
+Price :  12.7766
+Delta :   0.7030
+Gamma :   0.0092
+Rho   :  25.5649
+Theta :  -3.3024
+Vega  :  26.1348
+```
+
+### Asset-at-hit
+
+```Python
+option = ReinerRubinsteinBinaryBarrier(100, 100, 110, 1, 0.05, 0.02, 0.2, True, False, False)
+
+print(
+    f"Price : {option.payout_at_hit_price():>8.4f}\n"
+    f"Delta : {option.payout_at_hit_delta():>8.4f}\n"
+    f"Gamma : {option.payout_at_hit_gamma():>8.4f}\n"
+    f"Rho   : {option.payout_at_hit_rho():>8.4f}\n"
+    f"Theta : {option.payout_at_hit_theta():>8.4f}\n"
+    f"Vega  : {option.payout_at_hit_vega():>8.4f}"
+)
+```
+
+The resulting ouptut, for an up-and-in, asset-at-hit barrier binary option, is:
+
+```
+Price :  70.2715
+Delta :   3.8665
+Gamma :   0.0504
+Rho   : 140.6072
+Theta : -18.1631
+Vega  : 143.7414
+```
+
+## Payout at maturity - barrier only
+
+### Cash-or-nothing
+
+```Python
+option = ReinerRubinsteinBinaryBarrier(100, 100, 110, 1, 0.05, 0.02, 0.2, True, False, True)
+
+# Fixed cash amount                 :   B = 20
+
+print(
+    f"Price : {option.payout_at_maturity_barrier_price(20):>8.4f}\n"
+    f"Delta : {option.payout_at_maturity_barrier_delta(20):>8.4f}\n"
+    f"Gamma : {option.payout_at_maturity_barrier_gamma(20):>8.4f}\n"
+    f"Rho   : {option.payout_at_maturity_barrier_rho(20):>8.4f}\n"
+    f"Theta : {option.payout_at_maturity_barrier_theta(20):>8.4f}\n"
+    f"Vega  : {option.payout_at_maturity_barrier_vega(20):>8.4f}"
+)
+```
+
+The resulting ouptut, for an up-and-in, cash-or-nothing barrier binary option, is:
+
+```
+Price :  12.3415
+Delta :   0.6631
+Gamma :   0.0066
+Rho   :  16.1135
+Theta :  -2.6853
+Vega  :  24.4872
+```
+
+### Asset-or-nothing
+
+```Python
+option = ReinerRubinsteinBinaryBarrier(100, 100, 110, 1, 0.05, 0.02, 0.2, True, False, False)
+
+print(
+    f"Price : {option.payout_at_maturity_barrier_price():>8.4f}\n"
+    f"Delta : {option.payout_at_maturity_barrier_delta():>8.4f}\n"
+    f"Gamma : {option.payout_at_maturity_barrier_gamma():>8.4f}\n"
+    f"Rho   : {option.payout_at_maturity_barrier_rho():>8.4f}\n"
+    f"Theta : {option.payout_at_maturity_barrier_theta():>8.4f}\n"
+    f"Vega  : {option.payout_at_maturity_barrier_vega():>8.4f}"
+)
+```
+
+The resulting ouptut, for an up-and-in, asset-or-nothing barrier binary option, is:
+
+```
+Price :  69.3030
+Delta :   3.7775
+Gamma :   0.0445
+Rho   : 138.5663
+Theta : -16.7770
+Vega  : 140.0604
+```
+
+## Payout at maturity - barrier and strike
+
+### Cash-or-nothing
+
+```Python
+option = ReinerRubinsteinBinaryBarrier(100, 100, 110, 1, 0.05, 0.02, 0.2, True, False, True)
+
+# Option type                       :   Call / Put = True / False
+# Fixed cash amount                 :   B = 20
+
+cash = (True, 20)
+
+print(
+    f"Price : {option.payout_at_maturity_barrier_strike_price(*cash):>8.4f}\n"
+    f"Delta : {option.payout_at_maturity_barrier_strike_delta(*cash):>8.4f}\n"
+    f"Gamma : {option.payout_at_maturity_barrier_strike_gamma(*cash):>8.4f}\n"
+    f"Rho   : {option.payout_at_maturity_barrier_strike_rho(*cash):>8.4f}\n"
+    f"Theta : {option.payout_at_maturity_barrier_strike_theta(*cash):>8.4f}\n"
+    f"Vega  : {option.payout_at_maturity_barrier_strike_vega(*cash):>8.4f}"
+)
+```
+
+The resulting ouptut, for an up-and-in call, cash-or-nothing barrier binary option, is:
+
+```
+Price :   9.1908
+Delta :   0.4382
+Gamma :  -0.0009
+Rho   :  28.3150
+Theta :  -0.6695
+Vega  :   0.0384
+```
+
+### Asset-or-nothing
+
+```Python
+option = ReinerRubinsteinBinaryBarrier(100, 100, 110, 1, 0.05, 0.02, 0.2, True, False, False)
+
+print(
+    f"Price : {option.payout_at_maturity_barrier_strike_price(True):>8.4f}\n"
+    f"Delta : {option.payout_at_maturity_barrier_strike_delta(True):>8.4f}\n"
+    f"Gamma : {option.payout_at_maturity_barrier_strike_gamma(True):>8.4f}\n"
+    f"Rho   : {option.payout_at_maturity_barrier_strike_rho(True):>8.4f}\n"
+    f"Theta : {option.payout_at_maturity_barrier_strike_theta(True):>8.4f}\n"
+    f"Vega  : {option.payout_at_maturity_barrier_strike_vega(True):>8.4f}"
+)
+```
+
+The resulting ouptut, for an up-and-in call, asset-or-nothing barrier binary option, is:
+
+```
+Price :  55.0639
+Delta :   2.7878
+Gamma :   0.0150
+Rho   : 191.0375
+Theta :  -8.6015
+Vega  :  39.7165
+```
